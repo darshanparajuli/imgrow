@@ -2,10 +2,12 @@ use clap;
 use image;
 
 use clap::{App, Arg};
+use image::imageops::FilterType;
 use image::{GenericImageView, ImageBuffer, Rgba, RgbaImage};
 use std::process;
 
-const DEFAULT_SPACING: &'static str = "10";
+const DEFAULT_SPACING: u32 = 10;
+const DEFAULT_MAX_HEIGHT: i32 = -1;
 
 fn main() {
     let config = get_config();
@@ -62,6 +64,17 @@ fn main() {
         }
     }
 
+    if config.max_height != DEFAULT_MAX_HEIGHT {
+        let aspect_ratio = (config.max_height as f32) / (max_height as f32);
+        let new_width = (total_width as f32 * aspect_ratio as f32).round() as u32;
+        buffer = image::imageops::resize(
+            &buffer,
+            new_width,
+            config.max_height as u32,
+            FilterType::Lanczos3,
+        );
+    }
+
     match buffer.save(&config.output) {
         Ok(_) => {
             println!("Saved to '{}'.", config.output);
@@ -76,6 +89,7 @@ struct Config {
     input: Vec<String>,
     output: String,
     spacing: u32,
+    max_height: i32,
 }
 
 fn get_config() -> Config {
@@ -101,6 +115,13 @@ fn get_config() -> Config {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("max_height")
+                .long("height")
+                .help("Maximum height.")
+                .takes_value(true)
+                .required(false),
+        )
+        .arg(
             Arg::with_name("images")
                 .long("images")
                 .short("i")
@@ -113,12 +134,27 @@ fn get_config() -> Config {
 
     let spacing = matches
         .value_of("spacing")
-        .unwrap_or(DEFAULT_SPACING)
+        .unwrap_or(&DEFAULT_SPACING.to_string())
         .parse::<u32>();
     if spacing.is_err() {
         exit_error("Invalid spacing value!".into());
     }
     let spacing = spacing.unwrap();
+
+    let mut max_height = DEFAULT_MAX_HEIGHT;
+    if let Some(h) = matches.value_of("max_height") {
+        match h.parse::<i32>() {
+            Ok(h) => {
+                if h <= 0 {
+                    exit_error("Height must be greater than 0!".into());
+                }
+                max_height = h;
+            }
+            Err(_) => {
+                exit_error("Invalid height value!".into());
+            }
+        }
+    }
 
     Config {
         input: matches
@@ -127,7 +163,8 @@ fn get_config() -> Config {
             .map(|s| s.to_string())
             .collect(),
         output: matches.value_of("output").unwrap().to_string(),
-        spacing: spacing,
+        spacing,
+        max_height,
     }
 }
 
