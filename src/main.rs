@@ -106,7 +106,7 @@ fn get_config() -> Config {
     let matches = App::new("imgrow")
         .version("0.1.0")
         .author("Darshan Parajuli <parajulidarshan@gmail.com>")
-        .about("Put a bunch of images in a row.")
+        .about("Stitch together given images in a row.")
         .arg(
             Arg::with_name("output")
                 .short("o")
