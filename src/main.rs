@@ -1,9 +1,11 @@
 use clap;
 use image;
+use rayon;
 
 use clap::{App, Arg};
 use image::imageops::FilterType;
 use image::{GenericImageView, ImageBuffer, Rgba, RgbaImage};
+use rayon::prelude::*;
 use std::process;
 
 const DEFAULT_SPACING: u32 = 10;
@@ -37,18 +39,19 @@ fn main() {
     }
 
     if config.max_height != DEFAULT_MAX_HEIGHT {
-        total_width = 0;
-        for i in 0..images.len() {
-            let img = &images[i];
+        // resize concurrently!
+        images.par_iter_mut().for_each(|img| {
             let (w, h) = img.dimensions();
             let aspect_ratio = (config.max_height as f32) / (h as f32);
             let new_width = (w as f32 * aspect_ratio as f32).round() as u32;
-            let new_img = img.resize(new_width, config.max_height as u32, FilterType::Lanczos3);
+            *img = img.resize(new_width, config.max_height as u32, FilterType::Lanczos3);
+        });
 
-            let (w, _) = new_img.dimensions();
+        total_width = 0;
+        for i in 0..images.len() {
+            let img = &images[i];
+            let (w, _) = img.dimensions();
             total_width += w;
-            images[i] = new_img;
-
             if i < images.len() - 1 {
                 total_width += spacing;
             }
@@ -68,7 +71,6 @@ fn main() {
     }
 
     let mut x_off = 0;
-
     for (i, img) in images.iter().enumerate() {
         let (w, h) = img.dimensions();
 
