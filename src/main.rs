@@ -33,7 +33,7 @@ fn main() {
                 images.push(img);
             }
             Err(e) => {
-                exit_error(format!("Failed to open '{}': {}", name, e));
+                exit_error(&format!("Failed to open '{}': {}", name, e));
             }
         }
     }
@@ -52,9 +52,10 @@ fn main() {
             let img = &images[i];
             let (w, _) = img.dimensions();
             total_width += w;
-            if i < images.len() - 1 {
-                total_width += spacing;
-            }
+        }
+
+        if images.len() > 1 {
+            total_width += spacing * (images.len() as u32 - 1);
         }
 
         max_height = config.max_height as u32;
@@ -92,7 +93,7 @@ fn main() {
             println!("Saved to '{}'.", config.output);
         }
         Err(e) => {
-            exit_error(format!("Error saving to '{}': {}", config.output, e));
+            exit_error(&format!("Error saving to '{}': {}", config.output, e));
         }
     }
 }
@@ -180,7 +181,7 @@ fn get_config() -> Config {
     }
 }
 
-fn exit_error(msg: String) {
+fn exit_error(msg: &str) {
     eprintln!("{}", msg);
     process::exit(1);
 }
