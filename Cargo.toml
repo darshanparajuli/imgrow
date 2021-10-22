@@ -2,7 +2,7 @@
 name = "imgrow"
 version = "0.1.0"
 authors = ["Darshan Parajuli <parajulidarshan@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 clap = "2.33.0"
